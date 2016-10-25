@@ -1,0 +1,551 @@
+package VillageGamePack;
+//class Main extends PrintVillage
+import java.util.Scanner;
+public class Main extends PrintVillage {
+	/*TO DO:
+	 * Add difficulty levels
+	 * Make strength variate with other things
+	 * Make orc strength scale
+	 * Make new methods for different actions to clean up code. Don't leave everything in the main method. Also clear up extra vars
+	 * Fix variables adding/subtracting wrong
+	 * Discuss lore behind game
+	 * Make a traveller method to gain a random thingimajigger resource
+	 * add victory - survive until the royal army arrives Half-done. Final battle needs testing and balancing.
+	 * add program termination, game continues after victory.
+	 */
+	//establishing variables
+	static int strength = 0;
+	static int defense = 1;
+	static int soldiersVillage = 0;
+	static int weaponsVillage = 0;
+	static int food = 10000;
+	static int populus = 20;
+	static int metal = 500;
+	static boolean orkOrgy = false;
+	static int orcAttack = 5;
+	static int orcStrength = 5;
+	static int battleCounter = 0;
+	static int gracePeriod = 3;
+	//Village Variables
+	static int wallUpgr = 0;
+	static boolean house1 = true;
+	static boolean house2 = true;
+	static boolean house3 = true;
+	static boolean house4 = true;
+	static int destrHous = 0;
+	static String gString; //generic string
+	//win or loss
+	static boolean lost = false;
+	static boolean won = false;
+	public static void main( String[] args ){
+		int day = 0;
+		Scanner keyboard = new Scanner(System.in);
+		//creating variable string thingies
+		String popInput = "", nextDay = "", villager2 = "", death = ""; //is villager2 and death extraneous code?
+		//Print intro
+		System.out.println("|-------------|");
+		System.out.println("|-The Village-|");
+		System.out.println("|-------------|");
+		System.out.println("\n");
+		/*
+		 * Add tutorial code:   //DONE
+		 * Explain variables?  //NOT DONE
+		 *  Defense level, population, metal, food, strength
+		 *  what each means, //NEED TO DISCUSS LORE
+		 * Explain difficulty levels??
+		 *  Ramp up orcs spawning, reduce starting resources? reduce starting strength?
+		 */
+		tutorial();
+		//begin full game
+		while ((lost == false)&&(won == false)){
+			//It's a shiny new day!
+			day = day + 1;
+			if (day == 150){
+				won = true;
+				win();
+			}
+			orcAttack = orcAttack - 1;
+			System.out.println("Day " + day);
+			System.out.println((100 - day) + " days until the royal army arrives.");
+			//add a method for calculating new strength
+			printInfo();
+			//print the village
+			printVillageADVANCED(/*wallUpgr*/);
+			checkBustedHouses(); //extraneous? add into the battle method call?
+			//HERE COME THE ORKS MUTHAFUKA
+			orkItUp();
+			//bad coding made this necessary...
+			//hey fuk u m8
+			if (!lost){
+				if (day%3 == 0){
+					orcStrength += orcStrength;
+				}
+				if (destrHous == 0){
+					System.out.println("The village is intact. You have " + soldiersVillage + " soldiers in your army to command.");
+				} else {
+					System.out.println(destrHous + " houses have been destroyed! You have " + soldiersVillage + " soldiers in your army to command.");
+				}
+				//print values for village. Continue to next day.
+				orderVillagers(populus, popInput);
+				printInfo();
+				populus = populus + nextDay(nextDay, keyboard, day);
+				strength = populus/15 + soldiersVillage;
+			}
+		}
+	}
+	private static int nextDay(String nextDay, Scanner keyboard, int day) {
+		System.out.println("Please input to continue.");
+		nextDay = keyboard.next();
+		food = food - (5*populus) - (10*soldiersVillage);
+		if (food < 0){
+			return food/5;
+		}else if (food > (populus*5 + soldiersVillage*10)){
+			if (day%4 == 0){
+				System.out.println("The storks brought babies to the village! Your population has grown by " + (soldiersVillage + populus)/2 + " people!");
+				waitSecs(4);
+				return (soldiersVillage + populus)/2; //grow the population! Procreation, bitches! (assumes 1 child for each pair)
+			}
+		}else{
+			System.out.println("There is not enough food to support a growing population!");
+			return 0;
+		}
+		System.out.println("");
+		System.out.println("~o~");
+		System.out.println("");
+		waitSecs(4);
+		return 0;
+	}
+	private static void orderVillagers(int popUse, String popInput) {
+		boolean proceed = false;
+		Scanner keyboard = new Scanner(System.in);
+		//ordering villagers
+		System.out.println("You have " + populus + " villagers. Issue orders.");
+		while ((popUse > 0)||(proceed = false)){
+			//System.out.println(popUse + " villagers available.");
+			System.out.println("Commands available: \n 'reinforce' \t 15 villagers, -200 metal, defense +1 \n 'mine' \t 5 villagers, +10 metal \n 'mineall' \t "+ popUse + " villagers, +"+ 2*popUse + " metal \n 'repair' \t 5 villagers, -50 metal \n 'forge' \t 2 villagers, -10 metal, +1 weapon \n 'arm' \t\t -1 villager, -1 weapon, +1 soldier");
+			System.out.println(" 'unarm' \t +1 villager, +1 weapon, -1 soldier \n 'farm' \t 20 villagers, -40 metal, +300 food\n 'raid' \t chance to gain resouces from the orcs");
+			System.out.println(" You can also choose to 'proceed' and continue the day.");
+			System.out.print("> ");
+			popInput = keyboard.next();
+			if (popInput.equalsIgnoreCase("reinforce")){
+				if ((popUse >= 15)&&(metal >= 200)&&(wallUpgr < 6)){
+					System.out.println("You have reinforced the village!");
+					System.out.println("");
+					defense = defense + 1;
+					metal = metal - 200;
+					popUse = popUse - 15;
+					wallUpgr ++;
+				} else {
+					if(wallUpgr < 6){
+						if(!(popUse >= 15) && (metal >=200)){
+							System.out.println("Not enough available villagers.");
+						}else if((popUse >= 15) && !(metal >=200)){
+							System.out.println("Not enough available metal.");
+						}else{
+							System.out.println("Not enough available villagers or metal.");
+						}
+					}else{
+						System.out.println("The wall is already upgraded to the max!");
+						//TO THE MAX
+					}
+					System.out.println("");
+				}
+				if (popUse <= 0){
+					proceed = true;
+				}
+			} else if (popInput.equalsIgnoreCase("mine")){
+				if (popUse >= 5){
+					System.out.println("You have mined some metal.");
+					System.out.println("");
+					metal = metal + 10;
+					popUse = popUse - 5;
+				} else {
+					System.out.println("Not enough available villagers.");
+					System.out.println("");
+				}
+				if (popUse <= 0){
+					proceed = true;
+				}
+			} else if (popInput.equalsIgnoreCase("farm")){
+				if (popUse >= 20){
+					System.out.println("You have grown some crops.");
+					System.out.println("");
+					food = food + 300;
+					popUse = popUse - 20;
+				} else {
+					System.out.println("Not enough available villagers.");
+					System.out.println("");
+				}
+				if (popUse <= 0){
+					proceed = true;
+				}
+			}else if (popInput.equalsIgnoreCase("mineall")){
+				System.out.println("All the villagers have mined metal, gaining you " + popUse*2 + " metal.");
+				metal = metal + popUse*2;
+				popUse = 0;
+				proceed = true;
+				System.out.println("");
+			} else if (popInput.equalsIgnoreCase("repair")){
+				//Add in building destruction before adding this option.
+				System.out.println("Unimplemented.");
+				System.out.println("");
+			} else if (popInput.equalsIgnoreCase("execute")){
+				if (popUse >= 2){
+					System.out.println("You executed a villager! I'm sure they deserved it, the filthy wench.");
+					System.out.println("");
+					popUse = popUse - 1;
+					populus = populus - 1;
+				}
+				if (popUse == 1){
+					System.out.println("Aint nobody left but you, man.");
+					System.out.println("");
+				}
+				if (popUse <= 0){
+					proceed = true;
+				}
+			} else if(popInput.equalsIgnoreCase("arm")){
+				if((weaponsVillage >= 1)&&(popUse >= 1)){
+					System.out.println("A villager has taken up arms to defend his friends and family!");
+					weaponsVillage --;
+					popUse --;
+					populus --;
+					soldiersVillage ++;
+				}else{
+					System.out.println("Not enough weapons. Try to \'forge\' to make a weapon!");
+				}
+				System.out.println("");
+			} else if(popInput.equalsIgnoreCase("armall")){
+				if((weaponsVillage >= 1)&&(popUse >= 1)){
+					int conscriptedVillage = 0;
+					while ((weaponsVillage > 0)&&(popUse > 0)){
+						weaponsVillage --;
+						popUse --;
+						populus --;
+						soldiersVillage ++;
+						conscriptedVillage ++;
+					}
+					System.out.println(conscriptedVillage + " villagers have taken up arms to defend their friends and family!");
+				}else{
+					System.out.println("Not enough weapons. Try to \'forge\' to make a weapon!");
+				}
+				System.out.println("");
+			} else if(popInput.equalsIgnoreCase("unarmall")){
+				if((soldiersVillage > 0)){
+					int conscriptedVillage = 0;
+					while (soldiersVillage > 0){
+						weaponsVillage ++;
+						popUse ++;
+						populus ++;
+						soldiersVillage --;
+						conscriptedVillage ++;
+					}
+					System.out.println(conscriptedVillage + " soldiers have put down arms and rejoined the village!");
+				}else{
+					System.out.println("No soldiers to unarm.");
+				}
+				System.out.println("");
+			} else if(popInput.equalsIgnoreCase("unarm")){
+				if((soldiersVillage > 0)){
+					System.out.println("A villager has put down arms to rejoin the workforce!");
+					weaponsVillage ++;
+					popUse ++;
+					populus ++;
+					soldiersVillage --;
+				}else{
+					System.out.println("There are no soldiers to unarm!");
+				}
+				System.out.println("");
+			} else if(popInput.equalsIgnoreCase("raid")){
+				System.out.println("Unimplemented");
+				System.out.println("");
+			} else if(popInput.equalsIgnoreCase("forge")){ 
+				if((metal >= 10)&&(popUse >= 2)){
+					System.out.println("Your villagers made a weapon!");
+					popUse = popUse - 2;
+					weaponsVillage ++;
+				}else if((metal < 10)&&(popUse >= 2)){
+					System.out.println("Not enough available metal to make a weapon.");
+				}else if((metal >=10)&&(popUse <2)){
+					System.out.println("Not enough available villagers to make a weapon.");
+				}else{
+					System.out.println("Not enough available villagers and not enough metal to make a weapon.");
+				}
+				System.out.println("");
+			} else if(popInput.equalsIgnoreCase("forgeall")){
+				int weapons = 0;
+				if((metal >= 10)&&(popUse >= 2)){
+					while ((metal >= 10)&&(popUse >= 2)){
+						popUse = popUse - 2;
+						weaponsVillage ++;
+						metal = metal - 10;
+						weapons ++;
+					}
+					System.out.println(weapons*2 + " villagers made " + weapons + " weapons.");
+				}else if((metal < 10)&&(popUse >= 2)){
+					System.out.println("Not enough available metal to make a weapon.");
+				}else if((metal >=10)&&(popUse <2)){
+					System.out.println("Not enough available villagers to make a weapon.");
+				}else{
+					System.out.println("Not enough available villagers and not enough metal to make a weapon.");
+				}
+				System.out.println("");
+			}else if (popInput.equalsIgnoreCase("cheatercheaterpumpkineater")){
+				System.out.println("You filthy motherfucker. Cheat recieved.");
+				System.out.println("Metal + 500, food + 100000, Populus + 10. Ass.");
+				metal = metal + 500;
+				food = food + 100000;
+				populus = populus + 10;
+				popUse = popUse + 10;
+				System.out.println("");
+			} else if (popInput.equalsIgnoreCase("proceed")){
+				System.out.println("Proceeding with the day.");
+				System.out.println("");
+				popUse = 0;
+				proceed = true;
+			} else {
+				System.out.println("Invalid Input.");
+				System.out.println("");
+			}
+		}
+		System.out.println("New Villiage Stats:");
+	}
+	private static void printInfo() { //print values for village.
+		System.out.println("Defense level: " + defense);
+		System.out.println("Village soldiers: " + soldiersVillage);
+		System.out.println("Village Strength: " + (strength + strength*defense));
+		System.out.println("Population: " + populus);
+		System.out.println("Metal: " + metal);
+		System.out.println("Weapons: " + weaponsVillage);
+		System.out.println("Food remaining: " + food);
+		System.out.println("");
+	}
+	private static void tutorial() {
+		System.out.print("Do you want to see the tutorial? \n y \t n\n> ");
+		Scanner keyboard = new Scanner(System.in);
+		gString = keyboard.next();
+		if (gString.equalsIgnoreCase("Y")){
+			System.out.println("The village is a simple game with one objective: Survive the orc attacks until the royal army arrives!");
+			System.out.println("You have a number of resources to start the game: \n 1 \t strength \n 2 \t defense \n 3 \t soldiers \n 4 \t weapons \n 5 \t food \n 6 \t population \n 7 \t metal");
+			System.out.print("\nSelect the number corresponding to the resource you want to learn more about.\n> ");
+			gString = keyboard.next();
+			try{
+				explainResources(Integer.parseInt(gString));
+			}catch (Exception e){
+				System.out.println("You had your chance to learn how to win. Good luck anyway!");
+				waitSecs(4);
+			}
+		}
+	}
+	private static void explainResources(int rNumb) {
+		Scanner keyboard = new Scanner(System.in);
+		/* 1: strength
+		 * 2: defense
+		 * 3: soldiers
+		 * 4: weapons
+		 * 5: food
+		 * 6: populus
+		 * 7: metal
+		 */
+		if (rNumb == 1){ //explain strength
+			//set a strength buff somewhere.... related to soldiers, villagers, and intact buildings
+			System.out.println("Strength signifies how powerful your village is overall.\nHaving a high strength makes your village more likely\nto survive Orc attacks and win raids against Orc\nsettlements. Strength is directly related to how many\nsoldiers, villagers, and intact buildings you have.");
+		}else if (rNumb == 2){ //explain defense
+		}else if (rNumb == 3){ //explain soldiers
+		}else if (rNumb == 4){ //explain weapons
+		}else if (rNumb == 5){ //explain food
+		}else if (rNumb == 6){ //explain population (populus)
+		}else if (rNumb == 7){ //explain metal
+		}else{ //work with the douchebags
+			System.out.println("Please enter a valid number between 1 and 7.");
+		}
+		//loop back to explainResources if player wants:
+		System.out.print("\nDo you still want to learn about the different resource types? \n y\t n\n> ");
+		gString = keyboard.next();
+		if (gString.equalsIgnoreCase("y")){
+			System.out.print("\nSelect the number corresponding to the resource you want to learn more about.\n> ");
+			gString = keyboard.next();
+			explainResources(Integer.parseInt(gString));
+		}
+	}
+	private static void waitSecs(int secs) {
+		secs = (secs/3)*1000;
+		for(int i = 1; i < 4 + 1 ; i ++){
+			waitMiliSecs(secs);
+			System.out.print(".");
+		}
+		waitMiliSecs(secs);
+		System.out.println("");
+
+	}
+	private static void checkBustedHouses() {//no house busting yet.. needs to be incorporated
+		destrHous = 0;
+		if (house1 == false){
+			destrHous++;
+		} else if (house2 == false){
+			destrHous++;
+		} else if (house3 == false){
+			destrHous++;
+		} else if (house4 == false){
+			destrHous++;
+		}
+	}
+	private static void waitMiliSecs(int miliSecs) {
+		try {
+			Thread.sleep(miliSecs);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} //orc kode set
+	}
+	private static void orkItUp() {
+		if (orcAttack > 1){
+			orkOrgy = false;
+			System.out.println(orcAttack + " days until the orcs attack.");
+		} else if (orcAttack == 1){
+			orkOrgy = false;
+			System.out.println("1 day until the orcs attack!");
+		} else {
+			orkOrgy = true;
+			System.out.println("The orcs have arrived!");
+		}
+		System.out.println("");
+		if (orkOrgy == true){
+			battle();
+			battleCounter = battleCounter + 1;
+			orcAttack = gracePeriod;
+			orcStrength --;
+		}
+	}
+	/*
+	 * Battle organization:
+	 * orc strength - village strength (strength + strength*defense) = battleNum
+	 * if below 1, orcs are repelled without villager casualty; soldiers still die.
+	 * if above 0 , that many soldiers are lost. If number is greater village looses difference (populusLoss =  battleResult - soldierLoss)
+	 */
+	private static void battle() {
+		String next;
+		Scanner keyboard = new Scanner(System.in);
+		battleCounter++;
+		int battleScore = 0;
+		System.out.println("The orcs prepare to attack the village!");
+		System.out.println("The orcs' strength is " + orcStrength + "!");
+		System.out.println("The village strength is "+ (strength + strength*defense) + "!");
+		System.out.println("Input to begin battle!");
+		next = keyboard.next();
+		//add input
+		battleScore = (strength + strength*defense);
+		System.out.println("The orcs attack the village!");
+		//dot dot dot
+		waitSecs(4);
+		//add difficulty levels... either a subtract or a divide for the win, and a multiply or add for losses...
+		if (battleScore > orcStrength){ //Win
+			System.out.println("The battle was won, with no lives lost! The spoils of war are yours!");
+			System.out.println((battleCounter*10) + " metal gathered from the fallen orcs.");
+			metal = metal + (battleCounter*10);
+			System.out.println((battleCounter*1) + " weapons gathered from the fallen orcs.");
+			weaponsVillage = weaponsVillage + (battleCounter*1);
+			System.out.println((battleCounter*50) + " food gathered from the fallen orcs.");
+			food = food + (battleCounter*50);
+		} else if (battleScore < orcStrength){ //Loss
+			if (soldiersVillage >= (orcStrength - battleScore)){ //Loss with enough soldiers
+				soldiersVillage = soldiersVillage - (orcStrength - battleScore);
+				System.out.println("The battle was lost, but your soldiers have successfully defended the villagers.");
+				System.out.println("You have lost " + (orcStrength - battleScore) + " soldiers in the defence of the villagers. D:");
+			} else if (soldiersVillage < (orcStrength - battleScore)){ //loss With not enough soldiers
+				soldiersVillage = soldiersVillage - (orcStrength - battleScore);
+				if(soldiersVillage > 0){
+					System.out.println("Your soldiers were badly defeated! only " + soldiersVillage + " soldiers survived!");
+					System.out.println("Your defenses have weakened!");
+					wallUpgr --;
+					defense --;
+					populus = (populus - ((orcStrength - battleScore)));
+				}else if(soldiersVillage == 0){
+					System.out.println("Your soldiers were badly defeated! No soldiers survived!");
+					System.out.println("Your defenses have weakened!");
+					wallUpgr --;
+					defense --;
+					populus = (populus - ((orcStrength - battleScore)));
+				}else if(soldiersVillage < 0){
+					System.out.println("Your soldiers were badly defeated! No soldiers survived, and the orcs massacred the villagers!");
+					System.out.println("Your defenses have weakened!");
+					wallUpgr --;
+					defense --;
+					populus = (populus - ((orcStrength - battleScore) - soldiersVillage));
+				}
+				System.out.print("The orcs have attacked the villagers! You have lost ");
+				if (populus > 0){
+					if(soldiersVillage >= 0){
+						System.out.println(((orcStrength - battleScore)) + " villagers!");
+					}else{
+						System.out.println((orcStrength - battleScore) - soldiersVillage + " villagers!");
+						soldiersVillage = 0;
+					}
+				} else {
+					System.out.println("all of your remaining villagers!");
+					populus = 0;
+					lose();
+				}
+			}
+			//TO ADD: Building DESTRUCTION
+		} else { //TIE FIGHTER WHEEEEEEEW
+			System.out.println("The battle was a tie! No soldiers or villagers were lost!");
+		}
+		System.out.print("The orcs withdraw from the village... ");
+		if(lost){
+			System.out.print("leaving nothing but carnage and bloody corpses behind them.\nGame Over\n ");
+		}
+		System.out.println("\n");
+	} //OH LOOK ITS THE FUCK U METHOD RIDING ON A UNICORN BITCHES
+	private static void lose() {
+		System.out.println("Lol aint done yet gotta finish it up! u a lickee doge.");
+		System.out.println("Fukin losr");
+		lost = true;
+	}
+	private static void win() {
+		System.out.println("After 100 days of struggle, the king's army arrives at the village, enforcing your own battle-weary soldiers.");
+		System.out.println("Soldiers + 10,000");
+		soldiersVillage = soldiersVillage + 10000;
+		System.out.println("Cavalry + 500");
+		System.out.println("Seige engines + 20");
+		System.out.println("The army prepares to assault the orc hordes.");
+		battleFinal();
+	}
+	private static void battleFinal() { //rudimentary final battle. Should work. rebalance and spruce later.
+		String next;
+		Scanner keyboard = new Scanner(System.in);
+		battleCounter++;
+		int battleScore = 0;
+		orcStrength = orcStrength + 5000;
+		System.out.println("The orcs' strength is " + orcStrength + "!");
+		System.out.println("The army strength is "+ (strength + strength*defense) + "!");
+		System.out.println("Input to begin battle!");
+		next = keyboard.next();
+		//add input
+		battleScore = (strength + strength*defense);
+		System.out.println("The army assaults the hordes!");
+		//dot dot dot
+		waitSecs(4);
+		//add difficulty levels... either a subtract or a divide for the win, and a multiply or add for losses...
+		if (battleScore > orcStrength){ //Win
+			System.out.println("Though many soldiers fell, the battle was won! The hordes flee from your forces!");
+			System.out.println("The village is safe!");
+			finalScore();
+			System.out.println("/nGame Over/n");
+		} else if (battleScore < orcStrength){ //Loss
+			System.out.println("Even with the help of the royal army, the orc hordes are overwhelming. The army is destroyed along with the village. The kingdom is surely doomed!");
+			lose();
+
+		}
+	}
+	private static void finalScore() {
+		System.out.println("Defense level: " + defense);
+		System.out.println("Village soldiers: " + soldiersVillage);
+		System.out.println("Village Strength: " + (strength + strength*defense));
+		System.out.println("Population: " + populus);
+		System.out.println("Metal: " + metal);
+		System.out.println("Weapons: " + weaponsVillage);
+		System.out.println("Food remaining: " + food);
+		//add buildings destroyed.
+		
+	}
+}
+
